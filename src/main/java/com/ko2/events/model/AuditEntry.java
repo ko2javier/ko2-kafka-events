@@ -33,13 +33,13 @@ public class AuditEntry {
     @Column(nullable = false, length = 100)
     private String username;
 
-    @Column(length = 50)
-    private String clientIp;
+    @Column(name = "ip_address", length = 50)
+    private String ipAddress;
 
     @Column(nullable = false)
     private LocalDateTime timestamp;
 
     /** JSON con los metadatos del evento (par divisa, ciudad, etc.). */
-    @Column(columnDefinition = "TEXT")
-    private String metadata;
+    @Column(name = "detail", columnDefinition = "TEXT")
+    private String detail;
 }

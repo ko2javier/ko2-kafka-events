@@ -47,17 +47,17 @@ public class AuditConsumer {
             AuditEntry entry = AuditEntry.builder()
                     .eventType(event.getEventType())
                     .username(event.getUsername())
-                    .clientIp(event.getClientIp())
+                    .ipAddress(event.getClientIp())
                     .timestamp(event.getTimestamp() != null
                             ? LocalDateTime.ofInstant(event.getTimestamp(), ZoneOffset.UTC)
                             : LocalDateTime.now(ZoneOffset.UTC))
-                    .metadata(serializeMetadata(event))
+                    .detail(serializeMetadata(event))
                     .build();
 
             auditEntryRepository.save(entry);
             log.info("[AUDIT] {} | user={} | ip={} | topic={}",
                     entry.getEventType(), entry.getUsername(),
-                    entry.getClientIp(), record.topic());
+                    entry.getIpAddress(), record.topic());
 
             ack.acknowledge();
 
