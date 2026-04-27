@@ -1,0 +1,105 @@
+server:
+  port: 6000
+
+spring:
+  application:
+    name: ko2-kafka-events
+
+  # ──────────────────────────────────────────
+  # MySQL — Aiven (weatherdb, misma que API Service)
+  # ──────────────────────────────────────────
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  # ──────────────────────────────────────────
+  # Kafka — instancia Hetzner (KRaft)
+  # ──────────────────────────────────────────
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        spring.json.add.type.headers: false
+
+    consumer:
+      group-id: ko2-events-default
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.trusted.packages: "com.ko2.events.kafka.event"
+        spring.json.value.default.type: com.ko2.events.kafka.event.KafkaEvent
+
+    listener:
+      ack-mode: MANUAL_IMMEDIATE
+
+# ──────────────────────────────────────────
+# Topics Kafka del ecosistema KO2
+# ──────────────────────────────────────────
+kafka:
+  topics:
+    user-login: user.login
+    currency-query: currency.query
+    weather-query: weather.query
+
+# ──────────────────────────────────────────
+# JWT — mismo secret que Auth Service
+# ──────────────────────────────────────────
+jwt:
+  secret: ${JWT_SECRET}
+
+# ──────────────────────────────────────────
+# Actuator + Prometheus
+# ──────────────────────────────────────────
+management:
+  server:
+    port: 6001
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    export:
+      prometheus:
+        enabled: true
+
+# ──────────────────────────────────────────
+# Logging
+# ──────────────────────────────────────────
+logging:
+  level:
+    com.ko2.events: INFO
+    org.springframework.kafka: WARN
+    org.apache.kafka: WARN
+    org.hibernate.SQL: WARN
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
