@@ -8,7 +8,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
@@ -20,5 +19,6 @@ jobs:
             cd ~/server-infrastructure/portfolio-backend/ko2-kafka-events
             git pull
             cd ..
+            docker-compose stop ko2-kafka-events
             docker-compose rm -f ko2-kafka-events
             docker-compose up --build -d ko2-kafka-events
