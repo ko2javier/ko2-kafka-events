@@ -20,5 +20,5 @@ jobs:
             cd ~/server-infrastructure/portfolio-backend/ko2-kafka-events
             git pull
             cd ..
-            docker compose rm -f ko2-kafka-events
-            docker compose up --build -d ko2-kafka-events
+            docker-compose rm -f ko2-kafka-events
+            docker-compose up --build -d ko2-kafka-events
