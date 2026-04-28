@@ -28,6 +28,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Actuator abierto para Prometheus/Hetzner monitoring
                         .requestMatchers("/actuator/**").permitAll()
+                        // Swagger — acceso público para portfolio
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
+                        ).permitAll()
                         // Endpoints REST solo para ADMIN
                         .requestMatchers("/events/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
