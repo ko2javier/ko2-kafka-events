@@ -128,14 +128,14 @@ Returns a paginated list of rate-limit alerts, ordered by detection time descend
 
 Swagger UI is available through the API Gateway at:
 
-**[http://167.235.77.17:7000/webjars/swagger-ui/index.html](http://167.235.77.17:7000/webjars/swagger-ui/index.html)**
+**[http://api.ko2-oreilly.com:7000/webjars/swagger-ui/index.html](http://api.ko2-oreilly.com:7000/webjars/swagger-ui/index.html)**
 
 Select **"Kafka Events Service"** from the definition dropdown.
 
 ### Getting a token
 
 ```bash
-curl -s -X POST http://167.235.77.17:7000/auth/login \
+curl -s -X POST http://api.ko2-oreilly.com:7000/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"admin123"}' \
   | jq -r '.token'

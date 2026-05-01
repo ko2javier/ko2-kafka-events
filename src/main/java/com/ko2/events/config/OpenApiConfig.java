@@ -26,7 +26,7 @@ import org.springframework.context.annotation.Configuration;
                         """,
                 contact = @Contact(name = "ko2javier", url = "https://github.com/ko2javier")
         ),
-        servers = @Server(url = "http://167.235.77.17:7000", description = "Hetzner VPS (via Gateway)")
+        servers = @Server(url = "https://api.ko2-oreilly.com", description = "Production (via Gateway)")
 )
 @SecurityScheme(
         name = "bearerAuth",
