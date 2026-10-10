@@ -15,14 +15,16 @@ import org.springframework.context.annotation.Configuration;
                 title = "KO2 Kafka Events API",
                 version = "1.0",
                 description = """
-                        Microservicio de auditoría y alertas del ecosistema KO2 Currency & Weather Hub.
+                        Audit and alerting microservice for the KO2 Currency & Weather Hub.
 
-                        Consume eventos Kafka de tres topics (`user.login`, `currency.query`, `weather.query`) \
-                        y los persiste en MySQL (Aiven). Expone endpoints REST para consultar el histórico \
-                        de auditoría y las alertas de rate-limiting.
+                        It consumes three Kafka topics (`user.login`, `currency.query`, `weather.query`) with two independent consumer groups and persists them to MySQL: one writes the audit trail, the other watches for rate-limit abuse. Nothing on the request path waits for any of it, and the consumer replays from its last committed offset after a restart.
 
-                        **Autenticación:** todos los endpoints requieren un JWT de ROLE_ADMIN. \
-                        Obtén el token en el Auth Service (`POST /auth/login`) y pégalo en el botón Authorize.
+                        **Every endpoint below needs a ROLE_ADMIN JWT.** Four steps:
+
+                        1. In the **definition selector at the top right**, switch to **Auth Service**.
+                        2. Run `POST /auth/login` with `{ "username": "admin", "password": "admin123" }`. The `user` account authenticates fine but gets 403 here: these endpoints are admin-only.
+                        3. Copy the `token` value out of the response.
+                        4. Come back to this definition, click **Authorize**, and paste the token *without* the `Bearer` prefix.
                         """,
                 contact = @Contact(name = "ko2javier", url = "https://github.com/ko2javier")
         ),
@@ -34,7 +36,7 @@ import org.springframework.context.annotation.Configuration;
         scheme = "bearer",
         bearerFormat = "JWT",
         in = SecuritySchemeIn.HEADER,
-        description = "Introduce el JWT obtenido en POST /auth/login (sin el prefijo 'Bearer ')"
+        description = "Paste the ROLE_ADMIN JWT from POST /auth/login here, without the 'Bearer ' prefix."
 )
 public class OpenApiConfig {
 }
