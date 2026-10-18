@@ -1,6 +1,8 @@
 package com.ko2.events.config;
 
 import com.ko2.events.kafka.event.KafkaEvent;
+import io.micrometer.core.instrument.MeterRegistry;
+import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -21,10 +23,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
+@RequiredArgsConstructor
 public class KafkaConfig {
 
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
+
+    /**
+     * Para las metricas del cliente de Kafka. Ver el comentario de
+     * {@link #consumerFactory()}: sin esto no existe el consumer lag.
+     */
+    private final MeterRegistry meterRegistry;
 
     // ── Topics ──────────────────────────────────────────────────────────────
 
@@ -54,7 +63,11 @@ public class KafkaConfig {
         props.put(ProducerConfig.ACKS_CONFIG, "all");
         props.put(ProducerConfig.RETRIES_CONFIG, 3);
         props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
-        return new DefaultKafkaProducerFactory<>(props);
+        DefaultKafkaProducerFactory<String, KafkaEvent> factory = new DefaultKafkaProducerFactory<>(props);
+        // Mismo motivo que en consumerFactory(): al construir la fabrica a
+        // mano, Spring Boot no le engancha ningun listener de Micrometer.
+        factory.addListener(new MicrometerProducerListener<>(meterRegistry));
+        return factory;
     }
 
     @Bean
@@ -76,7 +89,19 @@ public class KafkaConfig {
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "com.ko2.events.kafka.event");
         props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, KafkaEvent.class.getName());
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
-        return new DefaultKafkaConsumerFactory<>(props);
+        DefaultKafkaConsumerFactory<String, KafkaEvent> factory =
+                new DefaultKafkaConsumerFactory<>(props);
+        // 2026-10-18. Sin esta linea NO EXISTE el consumer lag.
+        //
+        // Spring Boot engancha un MicrometerConsumerListener solo a la fabrica
+        // que autoconfigura el; esta se construye a mano, asi que las metricas
+        // del CLIENTE de Kafka (kafka_consumer_fetch_manager_records_lag_max
+        // entre ellas) no se publicaban. Lo que si se publicaba,
+        // spring_kafka_listener_seconds_*, mide cuanto tarda el listener en
+        // procesar un mensaje, que no es lo mismo: un consumidor que se cae o
+        // que se queda atras no se notaba en Prometheus.
+        factory.addListener(new MicrometerConsumerListener<>(meterRegistry));
+        return factory;
     }
 
     @Bean

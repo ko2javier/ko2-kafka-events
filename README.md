@@ -156,10 +156,37 @@ Paste the token into the **Authorize** button (without the `Bearer` prefix). The
 | Security | Spring Security · JJWT 0.12.3 (HS256) |
 | Observability | Spring Actuator · Micrometer · Prometheus (port 6001) |
 | API docs | springdoc-openapi 2.6.0 |
+| Tests | JUnit 5 + Testcontainers (real MySQL and real Kafka) — 23 tests |
 | Build | Gradle · Java 21 toolchain |
-| Deploy | Docker · GitHub Actions → Hetzner VPS |
+| Deploy | GitHub Actions → ghcr.io → Hetzner VPS, pinned by commit SHA |
 
 ---
+
+## Tests
+
+```bash
+./gradlew test            # 23 tests, ~3 min
+```
+
+Eighteen of them need Docker: a **real MySQL and a real Kafka broker** run in containers (Testcontainers). Kafka is not mocked here because consuming is what this service *is* — the five consumer tests publish through the application's own `KafkaTemplate` and walk the whole production path: `JsonSerializer` without type headers → a real topic → `ErrorHandlingDeserializer` + `JsonDeserializer` with a default value type → the listener → JPA → MySQL. Drop any link of that chain and they fail.
+
+The five `AlertConsumer` tests use doubles on purpose: the sliding window lives in a `ConcurrentHashMap` inside the consumer, so a broker would add twenty seconds and a chance of flakiness without testing anything more.
+
+What they pin: the threshold is *strictly* above 10 requests per minute and the window is per user and measured from the **event's** timestamp, not the machine clock; events outside the 60-second window leave the count; a malformed event is acknowledged instead of being retried forever; `/events/**` needs `ROLE_ADMIN`; the date range wins over the other filters (they are mutually exclusive, not combined); `size` is capped at 100; and `detail` is always valid JSON, never null. One more pins the **Kafka client metrics**: `KafkaConfig` builds its own consumer factory, so Spring Boot attaches no Micrometer listener to it and `kafka_consumer_fetch_manager_records_lag_max` simply did not exist — a consumer falling behind was invisible to Prometheus. The listener is now wired explicitly and a test fails if it is removed.
+
+**The suite was tested against itself.** Five faults were injected one at a time — lowering the alert threshold, removing the page-size cap, dropping both authorization layers, removing the deserializer's default value type, and removing the Micrometer consumer listener — and each one turns the suite red. Injecting only the `SecurityConfig` rule does *not*: the class-level `@PreAuthorize` still rejects the request, which is the point of having both.
+
+CI runs them on every push to `main` **before** anything is built or deployed.
+
+## Deployment
+
+```
+push to main ──▶ tests          23 tests, real MySQL + Kafka via Testcontainers
+                   └──▶ build   image to ghcr.io, tagged `latest` and the commit SHA
+                          └──▶ deploy   SSH: pull that SHA, restart, wait for 200 on :6001
+```
+
+Each stage gates the next. **The image is built in Actions, not on the VPS**, which used to spend minutes of compilation and scarce RAM on every push. Deploys pin the commit SHA rather than `latest`, so the running container states which code it serves and a rollback is the same command with the previous SHA.
 
 ## Part of the KO2 ecosystem
 

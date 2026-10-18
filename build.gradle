@@ -54,6 +54,29 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.kafka:spring-kafka-test'
     testImplementation 'org.springframework.security:spring-security-test'
+
+    // Tests de integracion (2026-10-18): un MySQL y un Kafka de verdad en
+    // contenedores. Las versiones de Testcontainers las fija el BOM de Spring
+    // Boot (1.19.8). Aqui Kafka SI hace falta, al contrario que en auth y en
+    // api-service: este servicio es un CONSUMIDOR (dos @KafkaListener), y sin
+    // broker lo unico que se podria probar son los endpoints REST.
+    testImplementation 'org.testcontainers:testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:mysql'
+    testImplementation 'org.testcontainers:kafka'
+
+    // Cliente HTTP de los tests. Sin esto, TestRestTemplate usa
+    // HttpURLConnection del JDK, que NO puede reintentar un POST cuando el
+    // servidor contesta 401 o 403 en streaming mode y revienta justo en los
+    // tests cuya respuesta correcta es el rechazo. Con Apache HttpClient en el
+    // classpath, Spring Boot lo elige solo. La version la fija el BOM.
+    testImplementation 'org.apache.httpcomponents.client5:httpclient5'
+
+    // Sin esto los tests NO SE EJECUTAN: Gradle muere con "Failed to load
+    // JUnit Platform ... including the JUnit Platform launcher" antes de
+    // entrar en ninguna clase. No es un test en rojo, es la bateria entera sin
+    // arrancar. Le paso lo mismo a auth-currency-data-hub el 2026-10-18.
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 springBoot {

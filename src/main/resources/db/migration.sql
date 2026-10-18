@@ -4,13 +4,21 @@
 -- ============================================================
 
 -- Tabla de auditoría: registra cada evento del ecosistema KO2
+--
+-- 2026-10-18: dos columnas estaban mal escritas aquí. Este fichero decía
+-- client_ip y metadata, pero AuditEntry las mapea como ip_address y detail, y
+-- la aplicación va con ddl-auto=none: quien creara la tabla con el DDL de
+-- antes se encontraría al consumer fallando en cada save() sin hacer ack, es
+-- decir, reintentando el mismo evento para siempre. La tabla real de Aiven sí
+-- coincide con la entidad (comprobado el 18/10 viendo que el consumer graba
+-- sin error en producción); era este fichero el que estaba desfasado.
 CREATE TABLE IF NOT EXISTS audit_events (
     id         BIGINT       NOT NULL AUTO_INCREMENT,
     event_type VARCHAR(30)  NOT NULL,
     username   VARCHAR(100) NOT NULL,
-    client_ip  VARCHAR(50),
+    ip_address VARCHAR(50),
     timestamp  DATETIME     NOT NULL,
-    metadata   TEXT,
+    detail     TEXT,
 
     PRIMARY KEY (id),
     INDEX idx_audit_username  (username),

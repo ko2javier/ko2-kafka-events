@@ -57,8 +57,8 @@ public class EventController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Página de registros de auditoría",
                             content = @Content(schema = @Schema(implementation = Page.class))),
-                    @ApiResponse(responseCode = "401", description = "JWT ausente o inválido", content = @Content),
-                    @ApiResponse(responseCode = "403", description = "El JWT no tiene ROLE_ADMIN", content = @Content)
+                    @ApiResponse(responseCode = "401", description = "JWT ausente o inválido. Lo devuelve el **gateway**, no este servicio", content = @Content),
+                    @ApiResponse(responseCode = "403", description = "Sin ROLE_ADMIN. Es también lo que devuelve este servicio cuando la petición llega sin usuario: SecurityConfig no declara ningún mecanismo de autenticación, así que su entry point es Http403ForbiddenEntryPoint", content = @Content)
             }
     )
     @GetMapping("/audit")
@@ -113,8 +113,8 @@ public class EventController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Página de alertas",
                             content = @Content(schema = @Schema(implementation = Page.class))),
-                    @ApiResponse(responseCode = "401", description = "JWT ausente o inválido", content = @Content),
-                    @ApiResponse(responseCode = "403", description = "El JWT no tiene ROLE_ADMIN", content = @Content)
+                    @ApiResponse(responseCode = "401", description = "JWT ausente o inválido. Lo devuelve el **gateway**, no este servicio", content = @Content),
+                    @ApiResponse(responseCode = "403", description = "Sin ROLE_ADMIN. Es también lo que devuelve este servicio cuando la petición llega sin usuario: SecurityConfig no declara ningún mecanismo de autenticación, así que su entry point es Http403ForbiddenEntryPoint", content = @Content)
             }
     )
     @GetMapping("/alerts")
